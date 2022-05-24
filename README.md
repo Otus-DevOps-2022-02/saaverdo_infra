@@ -18,23 +18,19 @@ gcloud compute instances create \
 ### Установка приложения:
 
 <details>
-<summary></summary>
-
-
-</details>
-
-<details>
 <summary>Установка ruby - `install_ruby.sh`</summary>
+
 ```
 #!/bin/bash
 sudo apt update
 sudo apt install -y ruby-full ruby-bundler build-essential
 ```
+
 </details>
 
 
 <details>
-<summary>Установка mongo - `install_mongodb.sh`</summary>
+<summary>Установка mongo - install_mongodb.sh</summary>
 
 ```
 #!/bin/bash
@@ -78,11 +74,12 @@ gcloud compute instances create \
 
 при этом надо будет подождать некоторое время, пока отработает скрипт
 
-> time ./startup_deploy.sh
-> real    1m4.081s
-> user    0m40.758s
-> sys     0m12.016s
-
+```
+time ./startup_deploy.sh
+real    1m4.081s
+user    0m40.758s
+sys     0m12.016s
+```
 
 
 <details>
