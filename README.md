@@ -1,6 +1,92 @@
 # saaverdo_infra
 saaverdo Infra repository
 
+## Task 4 deploy test app
+
+testapp_IP = 34.141.209.116
+testapp_port = 9292
+
+### Создание ВМ
+gcloud compute instances create \
+  --boot-disk-size=10GB \
+  --image=ubuntu-pro-1604-xenial-v20211213 \
+  --image-project=ubuntu-os-pro-cloud \
+  --machine-type=e2-medium \
+  --tags puma-server --restart-on-failure \
+  --zone=europe-west4-a reddit-app
+
+### Установка приложения:
+
+<details>
+<summary></summary>
+
+
+</details>
+
+<details>
+<summary>Установка ruby - `install_ruby.sh`</summary>
+```
+#!/bin/bash
+sudo apt update
+sudo apt install -y ruby-full ruby-bundler build-essential
+```
+</details>
+
+
+<details>
+<summary>Установка mongo - `install_mongodb.sh`</summary>
+
+```
+#!/bin/bash
+wget -qO - https://www.mongodb.org/static/pgp/server-4.2.asc | sudo apt-key add -
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/4.2 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.2.list
+sudo apt-get update
+sudo apt-get install -y mongodb-org
+sudo systemctl enable mongod --now
+```
+
+</details>
+
+<details>
+<summary>Установка и запуск приложения - deploy.sh</summary>
+
+```
+#!/bin/bash
+git clone -b monolith https://github.com/express42/reddit.git
+cd reddit && bundle install
+puma -d
+```
+
+</details>
+
+
+#### Запуск ВМ с Startup script
+И вишенка - при создании ВМ деплоим в него прложение с помощью startup скрипта.
+Для этого в команду запуска добавляем:
+`--metadata-from-file=startup-script=startup_deploy.sh`
+
+```
+gcloud compute instances create \
+  --boot-disk-size=10GB \
+  --image=ubuntu-pro-1604-xenial-v20211213 \
+  --image-project=ubuntu-os-pro-cloud \
+  --machine-type=e2-medium \
+  --metadata-from-file startup-script=startup_deploy.sh \
+  --tags puma-server --restart-on-failure \
+  --zone=europe-west4-a reddit-app
+```
+
+при этом надо будет подождать некоторое время, пока отработает скрипт
+
+> time ./startup_deploy.sh
+> real    1m4.081s
+> user    0m40.758s
+> sys     0m12.016s
+
+
+
+<details>
+<summary>Task 3</summary>
 
 ## Task 3 bastion homework
 
@@ -144,3 +230,4 @@ https://linuxize.com/post/using-the-ssh-config-file/
 https://man.openbsd.org/OpenBSD-current/man5/ssh_config.5
 https://man.openbsd.org/OpenBSD-current/man5/sshd_config.5
 https://access.redhat.com/solutions/1166283
+</details>
