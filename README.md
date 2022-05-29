@@ -1,6 +1,38 @@
 # saaverdo_infra
 saaverdo Infra repository
 
+## Task 5 Packer
+
+для доступа к веб-морде нашего приложения создадим разрешающее правило для брандмауэра:
+
+    gcloud compute firewall-rules create allow-puma-reddit --allow tcp:9292
+
+Необходимые параметны вынесем в файл `variables.json` и создадим образ с установленными `ruby` и `mongodb`:
+
+```
+packer build -var-file=variables.json -var 'source_image=ubuntu-pro-1604-xenial-v20211213' -var 'project_id=black-machine-349109' ubuntu16.json
+```
+
+(`image_name` был зафиксирован, чтобы на него сслылаться в следующем образе)
+
+create-reddit-vm.sh
+
+#### Bake them all
+
+Теперь на основе ранее созданного образа запечём новый, со всей начинкой - установим приложение и добавим systemd unit для его запуска.
+Шаблон будет называться `immutable.json`
+
+```
+packer build -var-file=variables.json -var 'source_image=reddit-base-otus-w-hw5' -var 'project_id=black-machine-349109' -var 'image_description=full reddit app' ubuntu16.json
+```
+
+Создать ВМ со свежезапечённым образом с хрустящей корочкой можно запустив скрипт `create-reddit-vm.sh` в директории scripts/
+
+#### Links
+https://www.packer.io/plugins/builders/googlecompute
+https://www.packer.io/docs/templates/legacy_json_templates/user-variables
+
+
 ## Task 4 deploy test app
 
 testapp_IP = 34.141.209.116
