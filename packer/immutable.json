@@ -1,0 +1,45 @@
+{
+    "variables": {
+        "project_id": "",
+        "source_image": ""
+    },
+    "builders": [
+        {
+        "type": "googlecompute",
+        "project_id": "{{ user `project_id` }}",
+        "image_name": "reddit-full-otus-w-hw5",
+        "image_family": "reddit-full",
+        "source_image": "{{ user `source_image` }}",
+        "zone": "europe-west4-a",
+        "ssh_username": "appuser",
+        "machine_type": "{{ user `machine_type` }}",
+        "image_description": "{{ user `image_description` }}",
+        "disk_size": "{{ user `disk_size` }}",
+        "disk_type": "{{ user `disk_type` }}",
+        "network": "{{ user `network` }}",
+        "tags": "{{ user `tags` }}"
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "script": "scripts/deploy.sh",
+            "execute_command": "sudo {{.Path}}"
+        },
+        {
+            "type": "file",
+            "source": "files/reddit.service",
+            "destination": "/tmp/reddit.service"
+        },
+        {
+            "type": "shell",
+            "inline": ["mv /tmp/reddit.service /etc/systemd/system/reddit.service"],
+            "execute_command": "sudo {{.Path}}"
+        },
+        {
+            "type": "shell",
+            "script": "scripts/start_service.sh",
+            "execute_command": "sudo {{.Path}}"
+        }
+    ]
+}
