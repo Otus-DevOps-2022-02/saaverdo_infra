@@ -6,6 +6,6 @@ git clone -b monolith https://github.com/express42/reddit.git $APP_DIR/reddit
 cd $APP_DIR/reddit
 bundle install
 sudo mv /tmp/puma.service /etc/systemd/system/puma.service
-sydo systemctl daemon-reload
+sudo systemctl daemon-reload
 sudo systemctl start puma
 sudo systemctl enable puma
