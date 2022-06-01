@@ -1,6 +1,20 @@
 # saaverdo_infra
 saaverdo Infra repository
 
+## Task 6 Terraform - 1
+
+Отработали создание VM с помошью `Terraform`
+
+Из нюансов: т.к. ssh-ключ я создавал с паролем, для его использования через ssh agent в секции `connection` надо выставлять `agent = true`
+Иначе получаем ошибку у `provisioner'ов`:
+
+```
+Failed to parse ssh private key: ssh: this private key is passphrase protected
+```
+
+И т.к. параметр `agent = true` конфликтует с явным указанием `private_key`, последний параметр необходимо закомментировать.
+
+
 ## Task 5 Packer
 
 для доступа к веб-морде нашего приложения создадим разрешающее правило для брандмауэра:
