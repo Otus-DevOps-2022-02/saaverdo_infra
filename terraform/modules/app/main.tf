@@ -1,8 +1,3 @@
-provider "google" {
-  project = var.project
-  region  = var.region
-}
-
 resource "google_compute_instance" "app" {
   name         = "reddit-app"
   machine_type = "g1-small"
@@ -11,7 +6,7 @@ resource "google_compute_instance" "app" {
   # boot disk definition
   boot_disk {
     initialize_params {
-      image = var.disk_image
+      image = var.app_disc_image
     }
   }
   # network interface definition
@@ -19,26 +14,28 @@ resource "google_compute_instance" "app" {
     # network this interface to be attached
     network = "default"
     # we'll use ephemeral IP to have access from the Internet
-    access_config {}
+    access_config {
+      nat_ip = google_compute_address.app_ip.address
+    }
   }
   metadata = {
     sshKeys = "appuser:${file(var.public_key_path)}"
   }
-  connection {
-    type  = "ssh"
-    host  = google_compute_instance.app.network_interface.0.access_config.0.nat_ip
-    user  = "appuser"
-    agent = true
-    # т.к. был создан ключ с паролем, используется опция agent, взаимоисключающая с private_key
-    #private_key = "${file(var.provision_key_path)}"
-  }
-  provisioner "file" {
-    source      = "files/puma.service"
-    destination = "/tmp/puma.service"
-  }
-  provisioner "remote-exec" {
-    script = "files/deploy.sh"
-  }
+  #connection {
+  #  type  = "ssh"
+  #  host  = google_compute_instance.app.network_interface.0.access_config.0.nat_ip
+  #  user  = "appuser"
+  #  agent = true
+  #  # т.к. был создан ключ с паролем, используется опция agent, взаимоисключающая с private_key
+  #  #private_key = "${file(var.provision_key_path)}"
+  #}
+  #provisioner "file" {
+  #  source      = "files/puma.service"
+  #  destination = "/tmp/puma.service"
+  #}
+  #provisioner "remote-exec" {
+  #  script = "files/deploy.sh"
+  #}
 }
 
 resource "google_compute_firewall" "firewall-puma" {
@@ -54,4 +51,9 @@ resource "google_compute_firewall" "firewall-puma" {
   source_ranges = ["0.0.0.0/0"]
   # apply the rule to instances with tags
   target_tags = ["reddit-app"]
+}
+
+resource "google_compute_address" "app_ip" {
+  name   = "reddit-app-ip"
+  region = "europe-west4"
 }
