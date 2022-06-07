@@ -61,6 +61,7 @@ sudo systemctl stop apt-daily.timer
 └── terraform.tfvars.example
 ```
 
+#### remote backend
 В качестве бекенда используем `gcs`.
 Для этого создадим в `google cloud storage` bucket `tf-otus-state-bucket` и в нём две папки - `prod` и `stage`
 и используем их для хранения state'а. Настройки вынесем в файл `backend.tf`:
@@ -96,6 +97,36 @@ gs://tf-otus-state-bucket/stage/default.tfstate
 
 Уря!!!
 У нас используется remote backend!
+
+#### Let's deploy all!
+
+Добавим `provisioner` для запуска приложения и реализуем его запуск через переменную - флаг `deploy_app`
+Объявим её в `variables`:
+
+```
+variable "deploy_app" {
+  description = "Enable app provisioning flag"
+  type = bool
+  default = false
+}
+```
+
+Я не нашёл культурного способа звдвть условие для части скрипта в terraform, поэтому для того, чтобы завязаться на эту переменную вынесем секцию с `provisioner-ами` в отдельный ресурс `"null_resource` и воспользуемся конструкцией:
+
+> count = var.deploy_app ? 1 : 0
+
+кроме того, пришлось указать в модуле пути к файлам относительно директорий с tf-скриптами (stage, prod) что мне не нравится, но иначе не заработало (
+
+> source      = "../modules/app/files/puma.service"
+
+Для задания переменной окружения `DATABASE_URL` для приложения создал шаблон service-файла, где указал `DATABASE_URL` как переменную окружения для сервиса:
+
+> Environment="DATABASE_URL=${db_url}:27017"
+
+Теперь для запуска с деплоем приложения достаточно для модуля `app` в переменных указать `deploy_app = true` (прописано для `prod`)
+
+
+
 
 ## Task 6 Terraform - 1
 

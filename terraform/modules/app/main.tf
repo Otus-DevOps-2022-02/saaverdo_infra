@@ -21,22 +21,35 @@ resource "google_compute_instance" "app" {
   metadata = {
     sshKeys = "appuser:${file(var.public_key_path)}"
   }
-  #connection {
-  #  type  = "ssh"
-  #  host  = google_compute_instance.app.network_interface.0.access_config.0.nat_ip
-  #  user  = "appuser"
-  #  agent = true
-  #  # т.к. был создан ключ с паролем, используется опция agent, взаимоисключающая с private_key
-  #  #private_key = "${file(var.provision_key_path)}"
-  #}
-  #provisioner "file" {
-  #  source      = "files/puma.service"
-  #  destination = "/tmp/puma.service"
-  #}
-  #provisioner "remote-exec" {
-  #  script = "files/deploy.sh"
-  #}
+  depends_on = [local_file.gen_service_file]
 }
+
+resource "null_resource" "provisioner" {
+  count = var.deploy_app ? 1 : 0
+  connection {
+    type  = "ssh"
+    host  = google_compute_instance.app.network_interface.0.access_config.0.nat_ip
+    user  = "appuser"
+    agent = true
+    # т.к. был создан ключ с паролем, используется опция agent, взаимоисключающая с private_key
+    #private_key = "${file(var.provision_key_path)}"
+  }
+  provisioner "file" {
+    source      = "../modules/app/files/puma.service"
+    destination = "/tmp/puma.service"
+  }
+  provisioner "remote-exec" {
+    script = "../modules/app/files/deploy.sh"
+  }
+  depends_on = [local_file.gen_service_file]
+}
+
+resource "local_file" "gen_service_file" {
+    content = templatefile("../modules/app/files/puma.service.tpl", {
+      db_url = var.db_ip
+    })
+    filename = "./files/puma.service"
+  }
 
 resource "google_compute_firewall" "firewall-puma" {
   name = "allow-puma-default"
