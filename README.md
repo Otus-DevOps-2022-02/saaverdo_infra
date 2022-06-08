@@ -1,6 +1,133 @@
 # saaverdo_infra
 saaverdo Infra repository
 
+## Task 7 Terraform - 2
+
+Для начала вспомним `Packer` и создадим образы `reddit-base-otus-db` и `reddit-base-otus-app`
+создадим файлы `app.json` и `db.json` на базе `ubuntu16.json`
+где в `provisioners` оставим по одному скрипту и зададим `image_name`
+
+При запуске воспользуемся готовым файлом с переменными `variables.json`, а значение `image_description` переопределим в командной строке:
+
+```
+packer build -var 'image_description=reddit app' -var-file=variables.json app.json
+packer build -var 'image_description=reddit db' -var-file=variables.json db.json
+```
+
+тут вылез один нюанс - при старте базового образа запускается автообновление и ломает всю картину.
+поэтому добавим в начало скрипта `install_mongodb.sh` строчку:
+
+```
+sudo systemctl stop apt-daily.timer
+```
+
+Вот теперь - отработало без вопросов!
+
+
+Далее, разбиваем конфигурацию на модули и выносим настройки в `main` и `stage`
+
+```
+~/otus/saaverdo_infra/terraform [terraform-2 L|✚ 5…5]
+00:01 $ tree
+.
+├── files
+│   ├── deploy.sh
+│   └── puma.service
+├── modules
+│   ├── app
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   └── variables.tf
+│   ├── db
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   └── variables.tf
+│   └── vpc
+│       ├── main.tf
+│       ├── outputs.tf
+│       └── variables.tf
+├── prod
+│   ├── backend.tf
+│   ├── main.tf
+│   ├── outputs.tf
+│   ├── terraform.tfvars
+│   └── variables.tf
+├── stage
+│   ├── backend.tf
+│   ├── main.tf
+│   ├── outputs.tf
+│   ├── terraform.tfvars
+│   └── variables.tf
+└── terraform.tfvars.example
+```
+
+#### remote backend
+В качестве бекенда используем `gcs`.
+Для этого создадим в `google cloud storage` bucket `tf-otus-state-bucket` и в нём две папки - `prod` и `stage`
+и используем их для хранения state'а. Настройки вынесем в файл `backend.tf`:
+
+> terraform {
+>     backend "gcs" {
+>       bucket = "tf-otus-state-bucket"
+>       prefix = "prod"
+>     }
+> }
+
+Выполним в `prod` и `stage` `terraform init`, затем -  `terraform plan`
+И посмотрим на наш bucket:
+
+```
+~/otus/saaverdo_infra/terraform/prod [terraform-2 L|✚ 5…5]
+00:13 $ terraform init
+Initializing modules...
+- app in ../modules/app
+- db in ../modules/db
+- vpc in ../modules/vpc
+
+Initializing the backend...
+```
+
+```
+00:01 $ gcloud alpha storage ls --recursive gs://tf-otus-state-bucket/**
+gs://tf-otus-state-bucket/prod/
+gs://tf-otus-state-bucket/prod/default.tfstate
+gs://tf-otus-state-bucket/stage/
+gs://tf-otus-state-bucket/stage/default.tfstate
+```
+
+Уря!!!
+У нас используется remote backend!
+
+#### Let's deploy all!
+
+Добавим `provisioner` для запуска приложения и реализуем его запуск через переменную - флаг `deploy_app`
+Объявим её в `variables`:
+
+```
+variable "deploy_app" {
+  description = "Enable app provisioning flag"
+  type = bool
+  default = false
+}
+```
+
+Я не нашёл культурного способа звдвть условие для части скрипта в terraform, поэтому для того, чтобы завязаться на эту переменную вынесем секцию с `provisioner-ами` в отдельный ресурс `"null_resource` и воспользуемся конструкцией:
+
+> count = var.deploy_app ? 1 : 0
+
+кроме того, пришлось указать в модуле пути к файлам относительно директорий с tf-скриптами (stage, prod) что мне не нравится, но иначе не заработало (
+
+> source      = "../modules/app/files/puma.service"
+
+Для задания переменной окружения `DATABASE_URL` для приложения создал шаблон service-файла, где указал `DATABASE_URL` как переменную окружения для сервиса:
+
+> Environment="DATABASE_URL=${db_url}:27017"
+
+Теперь для запуска с деплоем приложения достаточно для модуля `app` в переменных указать `deploy_app = true` (прописано для `prod`)
+
+
+
+
 ## Task 6 Terraform - 1
 
 Отработали создание VM с помошью `Terraform`
