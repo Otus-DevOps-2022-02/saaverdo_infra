@@ -18,7 +18,7 @@ ansible app -m command -a 'rm -rf ~/reddit'
 
 и прогнать плейбук заново - теперь модуль git отработал нормально.
 
-#### динамический inventory
+#### динамический inventory (не для * просто интересно)
 
 Не мудрствуя лукаво, воспользуемся штатным функционалом ansible вместо написания костылей.
 Для работы inventory plugin'а `gcp_compute` установим модули python `requests` и `google-auth`
@@ -33,12 +33,12 @@ ansible app -m command -a 'rm -rf ~/reddit'
 > filters: []
 > auth_kind: application
 
-также укажем его в `ansible.cfg`
+если укажем его в `ansible.cfg`
 
 > [defaults]
 > inventory = ./inventory.gcp.yml
 
-Теперь `ansible all -m ping` у нас успешно отрабатывает:
+то команда `ansible all -m ping` у нас успешно отрабатывает:
 
 ```
 01:23 $ ansible all -m ping
@@ -59,6 +59,14 @@ ansible app -m command -a 'rm -rf ~/reddit'
 ```
 
 Уря!
+#### LINKS 2-3-4!
+
+https://nklya.medium.com/%D0%B4%D0%B8%D0%BD%D0%B0%D0%BC%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B5-%D0%B8%D0%BD%D0%B2%D0%B5%D0%BD%D1%82%D0%BE%D1%80%D0%B8-%D0%B2-ansible-9ee880d540d6
+
+https://medium.com/@Temikus/ansible-gcp-dynamic-inventory-2-0-7f3531b28434
+
+https://www.ansible.com/blog/dynamic-inventory-past-present-future
+
 
 ## Task 7 Terraform - 2
 
