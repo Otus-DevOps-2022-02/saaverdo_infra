@@ -1,6 +1,65 @@
 # saaverdo_infra
 saaverdo Infra repository
 
+## Task 8 Ansible - 1
+
+Работаем с `ini` и `yaml` форматами inventory.
+
+первый запуск плейбука прошул с результатом
+
+> appserver                  : ok=2    changed=0
+
+т.к. нужный репозиторий был склонирован ранее.
+Поэтому пришлось удалить его командой
+
+```
+ansible app -m command -a 'rm -rf ~/reddit'
+```
+
+и прогнать плейбук заново - теперь модуль git отработал нормально.
+
+#### динамический inventory
+
+Не мудрствуя лукаво, воспользуемся штатным функционалом ansible вместо написания костылей.
+Для работы inventory plugin'а `gcp_compute` установим модули python `requests` и `google-auth`
+и создадим файл описания динамического inventory `inventory.gcp.yml`
+
+> ---
+> plugin: gcp_compute
+> projects:
+>   - black-machine-349109
+> zones:
+>   - "europe-west4-a"
+> filters: []
+> auth_kind: application
+
+также укажем его в `ansible.cfg`
+
+> [defaults]
+> inventory = ./inventory.gcp.yml
+
+Теперь `ansible all -m ping` у нас успешно отрабатывает:
+
+```
+01:23 $ ansible all -m ping
+34.141.154.183 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+35.204.135.181 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+```
+
+Уря!
+
 ## Task 7 Terraform - 2
 
 Для начала вспомним `Packer` и создадим образы `reddit-base-otus-db` и `reddit-base-otus-app`
