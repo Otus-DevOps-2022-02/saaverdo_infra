@@ -1,0 +1,8 @@
+---
+plugin: gcp_compute
+projects:
+  - black-machine-349109
+zones:
+  - "europe-west4-a"
+filters: []
+auth_kind: application

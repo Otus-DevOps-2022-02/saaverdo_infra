@@ -1,6 +1,73 @@
 # saaverdo_infra
 saaverdo Infra repository
 
+## Task 8 Ansible - 1
+
+Работаем с `ini` и `yaml` форматами inventory.
+
+первый запуск плейбука прошул с результатом
+
+> appserver                  : ok=2    changed=0
+
+т.к. нужный репозиторий был склонирован ранее.
+Поэтому пришлось удалить его командой
+
+```
+ansible app -m command -a 'rm -rf ~/reddit'
+```
+
+и прогнать плейбук заново - теперь модуль git отработал нормально.
+
+#### динамический inventory (не для * просто интересно)
+
+Не мудрствуя лукаво, воспользуемся штатным функционалом ansible вместо написания костылей.
+Для работы inventory plugin'а `gcp_compute` установим модули python `requests` и `google-auth`
+и создадим файл описания динамического inventory `inventory.gcp.yml`
+
+> ---
+> plugin: gcp_compute
+> projects:
+>   - black-machine-349109
+> zones:
+>   - "europe-west4-a"
+> filters: []
+> auth_kind: application
+
+если укажем его в `ansible.cfg`
+
+> [defaults]
+> inventory = ./inventory.gcp.yml
+
+то команда `ansible all -m ping` у нас успешно отрабатывает:
+
+```
+01:23 $ ansible all -m ping
+34.141.154.183 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+35.204.135.181 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+```
+
+Уря!
+#### LINKS 2-3-4!
+
+https://nklya.medium.com/%D0%B4%D0%B8%D0%BD%D0%B0%D0%BC%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B5-%D0%B8%D0%BD%D0%B2%D0%B5%D0%BD%D1%82%D0%BE%D1%80%D0%B8-%D0%B2-ansible-9ee880d540d6
+
+https://medium.com/@Temikus/ansible-gcp-dynamic-inventory-2-0-7f3531b28434
+
+https://www.ansible.com/blog/dynamic-inventory-past-present-future
+
+
 ## Task 7 Terraform - 2
 
 Для начала вспомним `Packer` и создадим образы `reddit-base-otus-db` и `reddit-base-otus-app`

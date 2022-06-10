@@ -6,7 +6,7 @@ After=network.target
 [Service]
 Type=simple
 User=appuser
-Environment="DATABASE_URL=10.164.15.194:27017"
+Environment="DATABASE_URL=10.164.15.196:27017"
 WorkingDirectory=/home/appuser/reddit
 ExecStart=/bin/bash -lc 'puma'
 Restart=always

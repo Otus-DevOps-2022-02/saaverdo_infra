@@ -1,0 +1,5 @@
+[app]
+appserver ansible_host=34.141.154.183
+
+[db]
+dbserver ansible_host=35.204.135.181
