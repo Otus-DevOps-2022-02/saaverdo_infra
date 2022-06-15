@@ -35,10 +35,10 @@ jobs:
 
     - name: Run ansible-lint
       # replace `main` with any valid ref, or tags like `v6`
-      uses: ansible-community/ansible-lint-action@main
+      uses: barolab/action-ansible-lint@master
       with:
         fail_on_error: "false"
-        №path: ansible/roles/
+        # path: ansible/roles/
         targets: |
           ./ansible/playbooks/
           ./ansible/roles/
