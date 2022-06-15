@@ -21,10 +21,10 @@ jobs:
       with:
         dir_filter: terraform/stage/,terraform/prod/
 
-    - name: Validate Terraform modules
-      uses: devops-infra/action-terraform-validate@v0.3
-      with:
-        dir_filter: terraform/
+    #- name: Validate Terraform modules
+    #  uses: devops-infra/action-terraform-validate@v0.3
+    #  with:
+    #    dir_filter: terraform/
 
     - name: Validate Packer Template
       uses: hashicorp/packer-github-actions@master

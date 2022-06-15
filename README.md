@@ -1,3 +1,6 @@
+![otus checks](https://github.com/Otus-DevOps-2022-02/saaverdo_infra/actions/workflows/run-tests-2022-02.yml/badge.svg)
+![validation checks](https://github.com/Otus-DevOps-2022-02/saaverdo_infra/actions/workflows/run-checks.yml/badge.svg)
+
 # saaverdo_infra
 saaverdo Infra repository
 
@@ -127,6 +130,10 @@ ansible-vault encrypt environments/stage/credentials.yml
 >       with:
 >         dir_filter: terraform/
 
+Но!
+т.к. это требует указания кредов для подключения, а безопасного варианта для этого в публичной репе я не нашёл, этот кусок будет закомментирован. ((
+
+
 Для `packer validate` укажем проверять шаблоны для наших ВМ и выполняться с флагом `-syntax-only`
 
 >     - name: Validate Packer Template
@@ -165,8 +172,11 @@ https://docs.github.com/en/actions/quickstart
 тулза для `tflint`:
 https://github.com/devops-infra/action-tflint
 
-тулза для `terraform validate`:
+для `terraform`:
 https://github.com/devops-infra/action-terraform-validate
+https://github.com/hashicorp/setup-terraform
+https://acloudguru.com/blog/engineering/how-to-use-github-actions-to-automate-terraform
+
 
 тулза для `packer validate`:
 https://github.com/marketplace/actions/packer-github-actions
