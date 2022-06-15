@@ -183,6 +183,8 @@ https://github.com/marketplace/actions/packer-github-actions
 
 тулза для `ansible-lint`:
 https://github.com/ansible-community/ansible-lint-action
+Этот линтер сломался, несите следующего:
+https://github.com/barolab/action-ansible-lint
 
 Adding a workflow status badge:
 https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/adding-a-workflow-status-badge
