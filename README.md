@@ -1,6 +1,183 @@
 # saaverdo_infra
 saaverdo Infra repository
 
+## Task 8 Ansible - 3
+
+#### Начинаем использовать роли
+
+создаём роли командой `ansible-galaxy roles\<role_name>`
+
+в `group_vars` могут лежать файлы без расширения - главное чтоб название соответствовало группе хостов
+как то в `all`:
+
+> env: stage
+
+для вывода `diff` в случае если таска `changed` можем довавить в `ansible.cfg` такую секцию:
+
+> [diff]
+> # enable output of diff if chsnges occured and it will contain 5  lines of context
+> always = True
+> context = 5
+
+#### Работаем с community-ролями
+
+Удобным и логичным будет разделить зависимости ролей по окружениям.
+К примеру, ложим файл `requirements.yml` в `environments/stage/requirements.yml`:
+
+```
+- src: jdauphant.nginx
+  version: v2.21.1
+```
+
+Для установки данной роли воспользуемся командой:
+
+```
+ansible-galaxy install -r environments/stage/requirements.yml
+```
+
+Чтобы не коммитить community-роли в своюб репу, её название стоит добавить в `.gitignore`
+
+И не забудем добавить переменные, необходимые для внешней роли в соответствующие файлы `group_vars`
+
+
+###  Шифруемся
+
+Создадим файл `vault.key` с паролем:
+
+```
+(venv) ✔ ~/otus/saaverdo_infra/ansible [ansible-3 L|✚ 21…4]
+openssl rand -base64 12 > ../../vault.key
+```
+
+и добавим в `ansible.cfg` строку:
+
+> vault_password_file = ../../vault.key
+
+Зашифруем файлы с кредами:
+
+```
+ansible-vault encrypt environments/prod/credentials.yml
+ansible-vault encrypt environments/stage/credentials.yml
+```
+
+глянем:
+
+> (venv) ✔ ~/otus/saaverdo_infra/ansible [ansible-3 L|✚ 21…4]
+> 17:47 $ head -n2 environments/stage/credentials.yml
+> $ANSIBLE_VAULT;1.1;AES256
+> 39396539663532353937336465663335333435373761306436393532316263653737383966343639
+
+Уря, всё зашифровано!
+
+
+### ** try
+
+Добавим ингридиенты по рецепту:
+
+```
+Необходимо, чтобы для коммитов в master и PR выполнялись
+как минимум эти действия:
+ * packer validate для всех шаблонов
+ * terraform validate и tflint для окружений stage и prod
+ * ansible-lint для плейбуков Ansible
+ * в README.md добавлен бейдж с статусом билда
+```
+
+#### Нужно больше ~~золота~~ проверок!
+
+По аналогии с файлом `run-tests-2022-02.yml` сделаем новый.
+
+зададим критерий - реагировать на `push` и `pull_request` к ветке `main`
+
+> name: Run checks for OTUS homework
+>
+> on:
+>   push:
+>     branches-ignore: main
+>   pull_request:
+>     branches-ignore: main
+
+Укажем имя нашей задачи - `validate`
+
+> jobs:
+>   validate:
+>     runs-on: ubuntu-latest
+
+и первым делом включим в шаги (`steps`) `uses: actions/checkout@v2`
+(Эта штука необходима!)
+
+>     steps:
+>     # Important: This sets up your GITHUB_WORKSPACE environment variable
+>     - name: Checkout this repo
+>       uses: actions/checkout@v2
+
+Далее добавляем шаги с необходимыми проверками, по рецепту:
+
+Для `tflint` укажем проверять директории `prod` и `stage`
+
+>     - name: Check linting of Terraform files
+>       uses: devops-infra/action-tflint@v0.3
+>       with:
+>         dir_filter: terraform/stage/,terraform/prod/
+
+Для `terraform validate` кажем проверять директорю `terraform`
+
+>     - name: Validate Terraform modules
+>       uses: devops-infra/action-terraform-validate@v0.3
+>       with:
+>         dir_filter: terraform/
+
+Для `packer validate` укажем проверять шаблоны для наших ВМ и выполняться с флагом `-syntax-only`
+
+>     - name: Validate Packer Template
+>       uses: hashicorp/packer-github-actions@master
+>       with:
+>         command: validate
+>         arguments: -syntax-only
+>         target: packer/app.json packer/db.json packer/ubuntu16.json packer/ immutable.json
+>
+
+И для `ansible-lint` укажем проверять плейбуки в дяректории `ansible/playbooks/`
+
+>     - name: Run ansible-lint
+>       # replace `main` with any valid ref, or tags like `v6`
+>       uses: ansible-community/ansible-lint-action@main
+>       with:
+>         path: ansible/playbooks/
+
+#### Последний штрих - ~~вишенка~~бейджик ~~на тортик~~ в README.md
+
+По документации добавим в `README.md` строку для бейджика в формате:
+
+> ![example workflow](https://github.com/<OWNER>/<REPOSITORY>/actions/workflows/<WORKFLOW_FILE>/badge.svg)
+
+В нашем случае это будут:
+
+```
+![otus checks](https://github.com/Otus-DevOps-2022-02/saaverdo_infra/actions/workflows/run-tests-2022-02.yml/badge.svg)
+![validation checks](https://github.com/Otus-DevOps-2022-02/saaverdo_infra/actions/workflows/run-checks.yml/badge.svg)
+```
+
+#### Links 2-3-4
+
+https://docs.github.com/en/actions/quickstart
+
+тулза для `tflint`:
+https://github.com/devops-infra/action-tflint
+
+тулза для `terraform validate`:
+https://github.com/devops-infra/action-terraform-validate
+
+тулза для `packer validate`:
+https://github.com/marketplace/actions/packer-github-actions
+
+тулза для `ansible-lint`:
+https://github.com/ansible-community/ansible-lint-action
+
+Adding a workflow status badge:
+https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/adding-a-workflow-status-badge
+
+
 ## Task 8 Ansible - 2
 
 В процессе создали плейбук, который впоследствии разбили на три отдельных.
