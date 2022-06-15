@@ -1,0 +1,30 @@
+---
+- name: Install Mongo
+  hosts: all
+  become: true
+  tasks:
+  - name: stop update service
+    systemd:
+      name: apt-daily.timer
+      state: stopped
+
+  - name: Add APT key
+    apt_key:
+      id: EA312927
+      keyserver: keyserver.ubuntu.com
+
+  - name: Add APT repository
+    apt_repository:
+      repo: deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/4.2 multiverse
+      state: present
+
+  - name: Install mongo
+    apt:
+      name: mongodb-org
+      state: present
+      allow_unauthenticated: yes
+
+  - name: Enable mongodb service
+    systemd:
+      name: mongod
+      enabled: yes

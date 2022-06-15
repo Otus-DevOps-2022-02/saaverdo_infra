@@ -1,6 +1,57 @@
 # saaverdo_infra
 saaverdo Infra repository
 
+## Task 8 Ansible - 2
+
+В процессе создали плейбук, который впоследствии разбили на три отдельных.
+Что ранее не использовал - объединение их в один с помощью `import_playbook`:
+
+```
+---
+- import_playbook: db.yml
+- import_playbook: app.yml
+- import_playbook: deploy.yml
+```
+
+Также ansible можно использовать в качестве provisioner'а для packer.
+В таком случае конструкцию
+
+```
+            "type": "shell",
+            "script": "scripts/install_ruby.sh"
+```
+
+меняем на
+
+```
+            "type": "ansible",
+            "playbook_file": "ansible/packer_app.yml"
+```
+
+И, поскольку я работаю из-под `WSL`, и packer `игнорирует !!` директиву `remote_user` в настройках ansible, необходимо указывать параметр `"user"` в секции с настройками ansible
+(https://www.packer.io/plugins/provisioners/ansible/ansible)
+
+
+```
+    "provisioners": [
+        {
+            "type": "ansible",
+            "playbook_file": "ansible/packer_app.yml",
+            "user": "appuser"
+        }
+    ]
+```
+
+После успешной пересборки образов задеплоим наш сетап:
+
+> ansible-playbook site.yml
+
+> PLAY RECAP *************************************************************************************************************
+> appserver                  : ok=9    changed=7    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+> dbserver                   : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+
+
 ## Task 8 Ansible - 1
 
 Работаем с `ini` и `yaml` форматами inventory.
