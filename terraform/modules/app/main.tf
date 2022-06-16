@@ -66,6 +66,21 @@ resource "google_compute_firewall" "firewall-puma" {
   target_tags = ["reddit-app"]
 }
 
+resource "google_compute_firewall" "firewall-web" {
+  name = "allow-web-default"
+  # network where the rule applied
+  network = "default"
+  #
+  allow {
+    protocol = "tcp"
+    ports    = ["80"]
+  }
+  # rule SRC addresses
+  source_ranges = ["0.0.0.0/0"]
+  # apply the rule to instances with tags
+  target_tags = ["reddit-app"]
+}
+
 resource "google_compute_address" "app_ip" {
   name   = "reddit-app-ip"
   region = "europe-west4"

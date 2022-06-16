@@ -1,0 +1,44 @@
+name: Run checks for OTUS homework
+
+on:
+  push:
+    branches-ignore: main
+  pull_request:
+    branches-ignore: main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+    - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+    - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+    - name: Checkout this repo
+      uses: actions/checkout@v2
+
+    - name: Check linting of Terraform files
+      uses: devops-infra/action-tflint@v0.3
+      with:
+        dir_filter: terraform/stage/,terraform/prod/
+
+    #- name: Validate Terraform modules
+    #  uses: devops-infra/action-terraform-validate@v0.3
+    #  with:
+    #    dir_filter: terraform/
+
+    - name: Validate Packer Template
+      uses: hashicorp/packer-github-actions@master
+      with:
+        command: validate
+        arguments: -syntax-only
+        target: packer/app.json packer/db.json packer/ubuntu16.json packer/immutable.json
+
+    - name: Run ansible-lint
+      # replace `main` with any valid ref, or tags like `v6`
+      uses: barolab/action-ansible-lint@master
+      with:
+        fail_on_error: "false"
+        # path: ansible/roles/
+        targets: |
+          ./ansible/playbooks/
+          ./ansible/roles/
