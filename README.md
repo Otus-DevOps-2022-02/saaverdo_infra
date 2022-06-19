@@ -36,15 +36,15 @@ molecule init scenario --scenario-name default -r db -d vagrant
 molecule init scenario -r db
 ```
 
-> (venv) serg@vagrant:~/otus/saaverdo_infra/ansible/roles/db$ molecule init scenario -r db 
-> INFO     Initializing new scenario default... 
-> INFO     Initialized scenario in /home/serg/otus/saaverdo_infra/ansible/roles/db/molecule/default successfully. 
+> (venv) serg@vagrant:~/otus/saaverdo_infra/ansible/roles/db$ molecule init scenario -r db
+> INFO     Initializing new scenario default...
+> INFO     Initialized scenario in /home/serg/otus/saaverdo_infra/ansible/roles/db/molecule/default successfully.
 
 ~~Другое дело!~~ всё равно хрень получается ((
 И вот почему:
 Согдасно документации (https://molecule.readthedocs.io/en/latest/installation.html)
 
-> Molecule uses the “delegated” driver by default 
+> Molecule uses the “delegated” driver by default
 
 Поэтому драйвер `molecule-vagrant` надо устанавливать отдельно
 
@@ -52,14 +52,11 @@ molecule init scenario -r db
 pip install molecule-vagrant
 ```
 
-Вот теперь 
+Вот теперь почистим ~~чакры~~ следы нашего безобразия и сделаем `molecule init` заново
 
 ```
 molecule init scenario --scenario-name default -r db -d vagrant
 ```
-
-у нам отработает
-
 
 
 Добавляем тесты `TestInfra` в `db/molecule/default/tests/test_default.py`
@@ -114,7 +111,7 @@ verifier:
 Molecule прни этом генерит плейбуку для запуска тестов - `db/molecule/default/converge.yml`
 Добавляем в него опцию `become: true` и переменную `mongo_bind_ip: 0.0.0.0`
 
-#### Добавляем проверку 
+#### Добавляем проверку
 Проверим, слушает ли система на порту 27017.
 Добавим  функцию в `db/molecule/default/tests/test_default.py`
 Предложенный в лекции пример использует устаревшую конструкцию, поэтому покурив документацию получим:
@@ -127,15 +124,15 @@ def test_socket_listening(host):
 
 Выполняем `molecule converge` и `molecule verify`
 
-> ============================= test session starts ============================== 
-> platform linux -- Python 3.8.10, pytest-7.1.2, pluggy-1.0.0 
-> rootdir: /home/serg 
-> plugins: testinfra-6.0.0, testinfra-6.7.0 
-> collected 3 items 
->  
-> molecule/default/tests/test_default.py ...                               [100%] 
->  
-> ============================== 3 passed in 3.47s =============================== 
+> ============================= test session starts ==============================
+> platform linux -- Python 3.8.10, pytest-7.1.2, pluggy-1.0.0
+> rootdir: /home/serg
+> plugins: testinfra-6.0.0, testinfra-6.7.0
+> collected 3 items
+>
+> molecule/default/tests/test_default.py ...                               [100%]
+>
+> ============================== 3 passed in 3.47s ===============================
 
 Уря!)
 
