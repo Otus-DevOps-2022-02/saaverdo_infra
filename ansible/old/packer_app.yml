@@ -1,0 +1,13 @@
+---
+- name: Install ruby
+  hosts: all
+  become: true
+  tasks:
+    - name: Add unit file for Puma
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - ruby-full
+        - ruby-bundler
+        - build-essential
