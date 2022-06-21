@@ -1,10 +1,151 @@
-![otus checks](https://github.com/Otus-DevOps-2022-02/saaverdo_infra/actions/workflows/run-tests-2022-02.yml/badge.svg)
-![validation checks](https://github.com/Otus-DevOps-2022-02/saaverdo_infra/actions/workflows/run-checks.yml/badge.svg)
+![otus checks ](https://github.com/Otus-DevOps-2022-02/saaverdo_infra/actions/workflows/run-tests-2022-02.yml/badge.svg)
+![validation checks ](https://github.com/Otus-DevOps-2022-02/saaverdo_infra/actions/workflows/run-checks.yml/badge.svg)
 
 # saaverdo_infra
 saaverdo Infra repository
 
-## Task 8 Ansible - 3
+## Task 11 Ansible - 4
+
+#### предварительные ласки с `Vagrant`
+Из нового - блок настроек `provision` для ansible, где задаём группу из inventory и передаём через `extra_vars` имя пользователя
+
+```
+  app.vm.provision "ansible" do |ansible|
+      ansible.playbook = "playbooks/site.yml"
+      ansible.groups = {
+          "app" => ["appserver"],
+          "app:vars" => {"db_host" => "10.10.10.10"}
+      }
+      ansible.extra_vars = {
+          "deploy_user" => "vagrant"
+      }
+```
+
+#### Собственно, тестирование роли
+
+Создадим заготовку тестов для роли `db`
+Перейдём для начала в папку роли `cd roles/db` и запустим:
+
+```
+molecule init scenario --scenario-name default -r db -d vagrant
+```
+
+Ага, щазз
+
+```
+molecule init scenario -r db
+```
+
+> (venv) serg@vagrant:~/otus/saaverdo_infra/ansible/roles/db$ molecule init scenario -r db
+> INFO     Initializing new scenario default...
+> INFO     Initialized scenario in /home/serg/otus/saaverdo_infra/ansible/roles/db/molecule/default successfully.
+
+~~Другое дело!~~ всё равно хрень получается ((
+И вот почему:
+Согдасно документации (https://molecule.readthedocs.io/en/latest/installation.html)
+
+> Molecule uses the “delegated” driver by default
+
+Поэтому драйвер `molecule-vagrant` надо устанавливать отдельно
+
+```
+pip install molecule-vagrant
+```
+
+Вот теперь почистим ~~чакры~~ следы нашего безобразия и сделаем `molecule init` заново
+
+```
+molecule init scenario --scenario-name default -r db -d vagrant
+```
+
+
+Добавляем тесты `TestInfra` в `db/molecule/default/tests/test_default.py`
+
+```
+import os
+
+import testinfra.utils.ansible_runner
+
+testinfra_hosts = testinfra.utils.ansible_runner.AnsibleRunner(
+    os.environ['MOLECULE_INVENTORY_FILE']).get_hosts('all')
+
+# check if MongoDB is enabled and running
+def test_mongo_running_and_enabled(host):
+    mongo = host.service("mongod")
+    assert mongo.is_running
+    assert mongo.is_enabled
+
+# check if configuration file contains the required line
+def test_config_file(host):
+    config_file = host.file('/etc/mongod.conf')
+    assert config_file.contains('bindIp: 0.0.0.0')
+    assert config_file.is_file
+```
+
+теперь отредактируем `db/molecule/default/molecule.yml`
+
+```
+---
+dependency:
+  name: galaxy
+driver:
+  name: vagrant
+  provider:
+    name: virtualbox
+lint:
+  name: yamllint
+platforms:
+  - name: instance
+    box: ubuntu/xenial64
+provisioner:
+  name: ansible
+lint: |
+  ansible-lint
+verifier:
+  name: testinfra
+```
+
+После чего выполняем команду `molecule create`
+Получить список созданных `molecule` инстансов - `molecule list`
+Подключиться к созданной при этом VM можно командой `molecule login -h instance`
+Molecule прни этом генерит плейбуку для запуска тестов - `db/molecule/default/converge.yml`
+Добавляем в него опцию `become: true` и переменную `mongo_bind_ip: 0.0.0.0`
+
+#### Добавляем проверку
+Проверим, слушает ли система на порту 27017.
+Добавим  функцию в `db/molecule/default/tests/test_default.py`
+Предложенный в лекции пример использует устаревшую конструкцию, поэтому покурив документацию получим:
+
+```
+def test_socket_listening(host):
+    socket = host.socket('tcp://0.0.0.0:27017')
+    assert socket.is_listening
+```
+
+Выполняем `molecule converge` и `molecule verify`
+
+> ============================= test session starts ==============================
+> platform linux -- Python 3.8.10, pytest-7.1.2, pluggy-1.0.0
+> rootdir: /home/serg
+> plugins: testinfra-6.0.0, testinfra-6.7.0
+> collected 3 items
+>
+> molecule/default/tests/test_default.py ...                               [100%]
+>
+> ============================== 3 passed in 3.47s ===============================
+
+Уря!)
+
+
+### Links
+
+Модули `TestInfra`
+https://testinfra.readthedocs.io/en/latest/modules.html
+
+
+
+
+## Task 10 Ansible - 3
 
 #### Начинаем использовать роли
 
@@ -190,7 +331,7 @@ Adding a workflow status badge:
 https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/adding-a-workflow-status-badge
 
 
-## Task 8 Ansible - 2
+## Task 9 Ansible - 2
 
 В процессе создали плейбук, который впоследствии разбили на три отдельных.
 Что ранее не использовал - объединение их в один с помощью `import_playbook`:
